@@ -145,7 +145,9 @@ public class RendererSchematicChunk {
                 }
 
                 GL11.glNewList(this.glList + pass, GL11.GL_COMPILE);
-                renderBlocks(pass, minX, minY, minZ, maxX, maxY, maxZ);
+                try (WorldRenderPass ignored = new WorldRenderPass(pass)) {
+                    renderBlocks(pass, minX, minY, minZ, maxX, maxY, maxZ);
+                }
                 GL11.glEndList();
 
                 GL11.glNewList(this.glListHighlight + pass, GL11.GL_COMPILE);
@@ -351,8 +353,11 @@ public class RendererSchematicChunk {
                                 }
                             }
 
-                            if (block != null && block.canRenderInPass(renderPass)) {
-                                renderBlocks.renderBlockByRenderType(block, x, y, z);
+                            if (renderPass < 2 && block != null && block.canRenderInPass(renderPass)) {
+                                TileEntity schematicTile = block.hasTileEntity(this.schematic.getBlockMetadata(x, y, z)) ? this.schematic.getTileEntity(x, y, z) : null;
+                                try (GregTechCoverRenderState ignored = GregTechCoverRenderState.prepare(schematicTile)) {
+                                    renderBlocks.renderBlockByRenderType(block, x, y, z);
+                                }
                             }
                         }
                     } catch (Exception e) {
